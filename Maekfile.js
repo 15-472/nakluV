@@ -36,21 +36,21 @@ const main_objs = [
 //maek.GLSLC(...) builds a glsl source file:
 // it returns the path to the output .inl file
 
-//STEPX: uncomment to build background shaders and pipeline:
+//uncomment to build background shaders and pipeline:
 //const background_shaders = [
 //	maek.GLSLC('background.vert'),
 //	maek.GLSLC('background.frag'),
 //];
 //main_objs.push( maek.CPP('Tutorial-BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
 
-//STEPX: uncomment to build lines shaders:
+//uncomment to build lines shaders and pipeline:
 //const lines_shaders = [
 //	maek.GLSLC('lines.vert'),
 //	maek.GLSLC('lines.frag'),
 //];
 //main_objs.push( maek.CPP('Tutorial-LinesPipeline.cpp', undefined, { depends:[...lines_shaders] } ) );
 
-//STEPX: uncomment to build objects shaders:
+//uncomment to build objects shaders and pipeline:
 //const objects_shaders = [
 //	maek.GLSLC('objects.vert'),
 //	maek.GLSLC('objects.frag'),
@@ -141,13 +141,15 @@ function custom_flags_and_rules() {
 		maek.options.CPPFlags = [
 			'-O2',
 			`-I${VULKAN_SDK}/include`,
-			`-I../glfw-3.4.bin.MACOS/include`,
+			`-I/opt/homebrew/include`, //for brew-installed GLFW
+			`-I../glfw-3.4.bin.MACOS/include`, //for release from github
 		];
 
 		maek.options.LINKLibs = [
 			`-L${VULKAN_SDK}/lib`,
 			`-lvulkan`,
-			`-L../glfw-3.4.bin.MACOS/lib-arm64`,
+			`-L/opt/homebrew/lib`, //for brew-installed GLFW
+			`-L../glfw-3.4.bin.MACOS/lib-arm64`, //for research from github
 			`-lglfw3`,
 			'-framework', 'AppKit',
 			'-framework', 'QuartzCore',
