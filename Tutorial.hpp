@@ -21,9 +21,7 @@ struct Tutorial : RTG::Application {
 
 	//Pipelines:
 
-	//STEPX: Add BackgroundPipeline structure here.
-	//STEPX: Add LinesPipeline structure here.
-	//STEPX: Add LinesPipeline structure here.
+	//TODO
 
 	//pools from which per-workspace things are allocated:
 	VkCommandPool command_pool = VK_NULL_HANDLE;
@@ -34,18 +32,11 @@ struct Tutorial : RTG::Application {
 	struct Workspace {
 		VkCommandBuffer command_buffer = VK_NULL_HANDLE; //from the command pool above; reset at the start of every render.
 
-		//STEPX: add lines buffers here
-
-		//STEPX: add world and transforms buffers and descriptor sets here
 	};
 	std::vector< Workspace > workspaces;
 
 	//-------------------------------------------------------------------
 	//static scene resources:
-
-	//STEPX: add mesh vertices buffer and structures here.
-
-	//STEPX: add texture images and descriptors here.
 
 	//--------------------------------------------------------------------
 	//Resources that change when the swapchain is resized:
@@ -58,18 +49,11 @@ struct Tutorial : RTG::Application {
 	//used from on_swapchain and the destructor: (framebuffers are created in on_swapchain)
 	void destroy_framebuffers();
 
-
 	//--------------------------------------------------------------------
 	//Resources that change when time passes or the user interacts:
 
 	virtual void update(float dt) override;
 	virtual void on_input(InputEvent const &) override;
-
-	//STEPX: add time accumulator here.
-
-	//STEPX: add generated lines and lines view matrix here.
-
-	//STEPX: add object drawing things here.
 
 	//--------------------------------------------------------------------
 	//Rendering function, uses all the resources above to queue work to draw a frame:

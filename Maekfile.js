@@ -61,7 +61,11 @@ const prebuilt_objs = [ ];
 
 //use the prebuilt refsol.o unless refsol.cpp exists:
 if (require('fs').existsSync('refsol.cpp')) {
-	main_objs.push( maek.CPP('refsol.cpp', `pre/${maek.OS}-${process.arch}/refsol`) );
+	const refsol_shaders = [
+		maek.GLSLC('refsol-background.vert'),
+		maek.GLSLC('refsol-background.frag'),
+	];
+	main_objs.push( maek.CPP('refsol.cpp', `pre/${maek.OS}-${process.arch}/refsol`, { depends:refsol_shaders } ) );
 } else {
 	prebuilt_objs.push(`pre/${maek.OS}-${process.arch}/refsol${maek.DEFAULT_OPTIONS.objSuffix}`);
 }

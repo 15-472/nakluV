@@ -67,6 +67,13 @@ struct Helpers {
 	//for selecting image formats:
 	VkFormat find_image_format(std::vector< VkFormat > const &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
+	//shader code from buffers -> modules:
+	VkShaderModule create_shader_module(uint32_t const *code, size_t bytes) const;
+	//version that figures out the size from a static array:
+	template< size_t N >
+	VkShaderModule create_shader_module(uint32_t const (&arr)[N]) const {
+		return create_shader_module(arr, 4*N);
+	}
 
 	//-----------------------
 	//internals:

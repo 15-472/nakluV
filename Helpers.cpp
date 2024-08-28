@@ -77,6 +77,12 @@ VkFormat Helpers::find_image_format(std::vector< VkFormat > const &candidates, V
 	return refsol::Helpers_find_image_format(rtg, candidates, tiling, features);
 }
 
+VkShaderModule Helpers::create_shader_module(uint32_t const *code, size_t bytes) const {
+	VkShaderModule shader_module = VK_NULL_HANDLE;
+	refsol::Helpers_create_shader_module(rtg, code, bytes, &shader_module);
+	return shader_module;
+}
+
 //----------------------------
 
 Helpers::Helpers(RTG const &rtg_) : rtg(rtg_) {

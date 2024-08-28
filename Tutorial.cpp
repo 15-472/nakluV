@@ -31,14 +31,14 @@ Tutorial::~Tutorial() {
 		std::cerr << "Failed to vkDeviceWaitIdle in Tutorial::~Tutorial [" << string_VkResult(result) << "]; continuing anyway." << std::endl;
 	}
 
+	if (swapchain_depth_image.handle != VK_NULL_HANDLE) {
+		destroy_framebuffers();
+	}
+
 	for (Workspace &workspace : workspaces) {
 		refsol::Tutorial_destructor_workspace(rtg, command_pool, &workspace.command_buffer);
 	}
 	workspaces.clear();
-
-	if (swapchain_depth_image.handle != VK_NULL_HANDLE) {
-		destroy_framebuffers();
-	}
 
 	refsol::Tutorial_destructor(rtg, &render_pass, &command_pool);
 }

@@ -104,6 +104,25 @@ void Tutorial_render_submit(
 	VkCommandBuffer workspace_command_buffer
 );
 
+//----- Used by `struct Tutorial::BackgroundPipeline` ------
+
+template< typename RTG_T >
+void BackgroundPipeline_create(
+	RTG_T const &rtg,
+	VkRenderPass render_pass,
+	uint32_t subpass,
+	VkShaderModule vert_module,
+	VkShaderModule frag_module,
+	VkPipelineLayout *layout,
+	VkPipeline *handle
+);
+
+template< typename RTG_T >
+void BackgroundPipeline_destroy(
+	RTG_T const &rtg,
+	VkPipelineLayout *layout,
+	VkPipeline *handle
+);
 
 //----- Used by `struct Helpers` ------
 
@@ -540,6 +559,57 @@ void Tutorial_render_submit(
 		workspace_command_buffer
 	);
 }
+
+
+void BackgroundPipeline_create_impl(
+	VkDevice rtg_device,
+	VkRenderPass render_pass,
+	uint32_t subpass,
+	VkShaderModule vert_module,
+	VkShaderModule frag_module,
+	VkPipelineLayout *layout,
+	VkPipeline *handle
+);
+template< typename RTG_T >
+void BackgroundPipeline_create(
+	RTG_T const &rtg,
+	VkRenderPass render_pass,
+	uint32_t subpass,
+	VkShaderModule vert_module,
+	VkShaderModule frag_module,
+	VkPipelineLayout *layout,
+	VkPipeline *handle
+) {
+	BackgroundPipeline_create_impl(
+		rtg.device,
+		render_pass,
+		subpass,
+		vert_module,
+		frag_module,
+		layout,
+		handle
+	);
+}
+
+
+void BackgroundPipeline_destroy_impl(
+	VkDevice rtg_device,
+	VkPipelineLayout *layout,
+	VkPipeline *handle
+);
+template< typename RTG_T >
+void BackgroundPipeline_destroy(
+	RTG_T const &rtg,
+	VkPipelineLayout *layout,
+	VkPipeline *handle
+) {
+	BackgroundPipeline_destroy_impl(
+		rtg.device,
+		layout,
+		handle
+	);
+}
+
 
 
 uint32_t Helpers_find_memory_type_impl(
