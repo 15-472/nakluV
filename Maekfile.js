@@ -136,7 +136,7 @@ function custom_flags_and_rules() {
 
 	} else if (maek.OS === 'macos') {
 		const fs = require('fs');
-		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.3.275.0/macOS`;
+		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.3.290.0/macOS`;
 		console.log(`Using VULKAN_SDK='${VULKAN_SDK}'; set VULKAN_SDK environment variable to override.`);
 
 		maek.options.CPP = ['clang++', '-std=c++20', '-Wall', '-Werror', '-g'];
