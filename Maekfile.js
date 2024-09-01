@@ -37,11 +37,11 @@ const main_objs = [
 // it returns the path to the output .inl file
 
 //uncomment to build background shaders and pipeline:
-//const background_shaders = [
-//	maek.GLSLC('background.vert'),
-//	maek.GLSLC('background.frag'),
-//];
-//main_objs.push( maek.CPP('Tutorial-BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
+const background_shaders = [
+	maek.GLSLC('background.vert'),
+	maek.GLSLC('background.frag'),
+];
+main_objs.push( maek.CPP('Tutorial-BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
 
 //uncomment to build lines shaders and pipeline:
 //const lines_shaders = [
