@@ -23,7 +23,6 @@ Tutorial::Tutorial(RTG &rtg_) : rtg(rtg_) {
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
 	);
 
-	std::cerr << "[Step 5: Checkin] (Depth Format) " << string_VkFormat(depth_format)  <<  std::endl;
 
 	{//create render pass
 		//attachments
@@ -749,8 +748,6 @@ void Tutorial::on_swapchain(RTG &rtg_, RTG::SwapchainEvent const &swapchain) {
 	}
 	
 	//TODO: Swapchain print
-	std::cerr << "[Step 5: Checkin] (Swapchain count) " << swapchain.image_views.size() <<  std::endl;
-
 }
 
 void Tutorial::destroy_framebuffers() {

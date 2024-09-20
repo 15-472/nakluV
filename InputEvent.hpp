@@ -2,13 +2,6 @@
 
 //Structure used for reporting input events from RTG -> Application.
 
-// *********************************************************
-// *                                                       *
-// * WARNING:                                              *
-// *                                                       *
-// *    Editing this structure will break refsol::RTG_run  *
-// *                                                       *
-// *********************************************************
 
 #include <cstdint>
 

@@ -59,20 +59,7 @@ const objects_shaders = [
 ];
 main_objs.push( maek.CPP('Tutorial-ObjectsPipeline.cpp', undefined, { depends:[...objects_shaders] } ) );
 
-const prebuilt_objs = [ ];
-
-//use the prebuilt refsol.o unless refsol.cpp exists:
-if (require('fs').existsSync('refsol.cpp')) {
-	const refsol_shaders = [
-		maek.GLSLC('refsol-background.vert'),
-		maek.GLSLC('refsol-background.frag'),
-	];
-	main_objs.push( maek.CPP('refsol.cpp', `pre/${maek.OS}-${process.arch}/refsol`, { depends:refsol_shaders } ) );
-} else {
-	prebuilt_objs.push(`pre/${maek.OS}-${process.arch}/refsol${maek.DEFAULT_OPTIONS.objSuffix}`);
-}
-
-const main_exe = maek.LINK([...main_objs, ...prebuilt_objs], 'bin/main');
+const main_exe = maek.LINK([...main_objs], 'bin/main');
 
 //default targets:
 maek.TARGETS = [main_exe];
