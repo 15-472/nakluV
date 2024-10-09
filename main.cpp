@@ -1,7 +1,7 @@
 
 #include "RTG.hpp"
 
-#include "Tutorial.hpp"
+#include "A1.hpp"
 
 #include <iostream>
 
@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 		RTG::Configuration configuration;
 
 		configuration.application_info = VkApplicationInfo{
-			.pApplicationName = "nakluV Tutorial",
+			.pApplicationName = "nakluV A1",
 			.applicationVersion = VK_MAKE_VERSION(0,0,0),
 			.pEngineName = "Unknown",
 			.engineVersion = VK_MAKE_VERSION(0,0,0),
@@ -36,12 +36,14 @@ int main(int argc, char **argv) {
 			});
 			return 1;
 		}
+		
+
 
 		//loads vulkan library, creates surface, initializes helpers:
 		RTG rtg(configuration);
 
 		//initializes global (whole-life-of-application) resources:
-		Tutorial application(rtg);
+		A1 application(rtg);
 
 		//main loop -- handles events, renders frames, etc:
 		rtg.run(application);

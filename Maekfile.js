@@ -27,12 +27,13 @@ custom_flags_and_rules();
 //maek.CPP(...) builds a c++ file:
 // it returns the path to the output object file
 const main_objs = [
-	maek.CPP('Tutorial.cpp'),
+	maek.CPP('A1.cpp'),
 	maek.CPP('PosColVertex.cpp'),
 	maek.CPP('PosNorTexVertex.cpp'),
 	maek.CPP('RTG.cpp'),
 	maek.CPP('Helpers.cpp'),
 	maek.CPP('main.cpp'),
+	maek.CPP('sejp.cpp'),
 ];
 
 //maek.GLSLC(...) builds a glsl source file:
@@ -43,21 +44,21 @@ const background_shaders = [
 	maek.GLSLC('background.vert'),
 	maek.GLSLC('background.frag'),
 ];
-main_objs.push( maek.CPP('Tutorial-BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
+main_objs.push( maek.CPP('BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
 
 //uncomment to build lines shaders and pipeline:
 const lines_shaders = [
 	maek.GLSLC('lines.vert'),
 	maek.GLSLC('lines.frag'),
 ];
-main_objs.push( maek.CPP('Tutorial-LinesPipeline.cpp', undefined, { depends:[...lines_shaders] } ) );
+main_objs.push( maek.CPP('LinesPipeline.cpp', undefined, { depends:[...lines_shaders] } ) );
 
 //uncomment to build objects shaders and pipeline:
 const objects_shaders = [
 	maek.GLSLC('objects.vert'),
 	maek.GLSLC('objects.frag'),
 ];
-main_objs.push( maek.CPP('Tutorial-ObjectsPipeline.cpp', undefined, { depends:[...objects_shaders] } ) );
+main_objs.push( maek.CPP('ObjectsPipeline.cpp', undefined, { depends:[...objects_shaders] } ) );
 
 const main_exe = maek.LINK([...main_objs], 'bin/main');
 

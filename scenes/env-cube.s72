@@ -1,0 +1,41 @@
+["s72-v2",
+{
+	"type":"SCENE",
+	"name":"Environment Cube Scene",
+	"roots":["Environment Cube Node","Environment Node"]
+},
+{
+	"type":"NODE",
+	"name":"Environment Cube Node",
+	"mesh":"Environment Cube Mesh"
+},
+{
+	"type":"MESH",
+	"name":"Environment Cube Mesh",
+	"topology":"TRIANGLE_LIST",
+	"count":36,
+	"attributes":{
+		"POSITION": { "src":"env-cube.b72", "offset":0,  "stride":52, "format":"R32G32B32_SFLOAT" },
+		"NORMAL":   { "src":"env-cube.b72", "offset":12, "stride":52, "format":"R32G32B32_SFLOAT" },
+		"TANGENT":  { "src":"env-cube.b72", "offset":24, "stride":52, "format":"R32G32B32A32_SFLOAT" },
+		"TEXCOORD": { "src":"env-cube.b72", "offset":40, "stride":52, "format":"R32G32_SFLOAT" },
+		"COLOR":    { "src":"env-cube.b72", "offset":48, "stride":52, "format":"R8G8B8A8_UNORM" }
+	},
+	"material":"environment material"
+},
+{
+	"type":"MATERIAL",
+	"name":"environment material",
+	"environment":{}
+},
+{
+	"type":"NODE",
+	"name":"Environment Node",
+	"environment":"environment"
+},
+{
+	"type":"ENVIRONMENT",
+	"name":"environment",
+	"radiance": {"src":"env-cube.png", "type":"cube", "format":"rgbe"}
+}
+]

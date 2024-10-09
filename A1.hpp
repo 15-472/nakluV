@@ -6,11 +6,11 @@
 
 #include "RTG.hpp"
 
-struct Tutorial : RTG::Application {
+struct A1 : RTG::Application {
 
-	Tutorial(RTG &);
-	Tutorial(Tutorial const &) = delete; //you shouldn't be copying this object
-	~Tutorial();
+	A1(RTG &);
+	A1(A1 const &) = delete; //you shouldn't be copying this object
+	~A1();
 
 	//kept for use in destructor:
 	RTG &rtg;
@@ -132,6 +132,24 @@ struct Tutorial : RTG::Application {
 	//-------------------------------------------------------------------
 	//static scene resources:
 
+	struct AABB {
+		float minX;
+		float minY;
+		float minZ;
+		float maxX;
+		float maxY;
+		float maxZ;
+	};
+
+	struct Frustum {
+		float near_right;
+		float near_top;
+		float near_plane;
+		float far_plane;
+	} frustum;
+
+	void create_frustum();	
+
 	Helpers::AllocatedBuffer object_vertices;
 	struct ObjectVertices {
 		uint32_t first = 0;
@@ -141,6 +159,9 @@ struct Tutorial : RTG::Application {
 	ObjectVertices plane_vertices;
 	ObjectVertices torus_vertices;
 	ObjectVertices sphere_vertices;
+	std::map<std::string, ObjectVertices> mesh_vertices;
+	std::map<std::string, AABB> mesh_box;
+	
 
 	std::vector< Helpers::AllocatedImage > textures;
 	std::vector< VkImageView > texture_views;
@@ -163,11 +184,19 @@ struct Tutorial : RTG::Application {
 	//Resources that change when time passes or the user interacts:
 
 	virtual void update(float dt) override;
-	virtual void on_input(InputEvent const &) override;
+	virtual void on_input(InputEvent const &input) override;
+
+	virtual bool in_view(AABB box, mat4 transform);
 
 	float time = 0.0f;
 
 	mat4 CLIP_FROM_WORLD;
+	mat4 DEBUG_CLIP_FROM_WORLD;
+
+	//Camera modifiers
+	bool mouse_down = false;
+	float x0;
+	float y0;
 
 	std::vector< LinesPipeline::Vertex> lines_vertices;
 
@@ -176,7 +205,7 @@ struct Tutorial : RTG::Application {
 	struct ObjectInstance {
 		ObjectVertices vertices;
 		ObjectsPipeline::Transform transform;
-		uint32_t texture = 0;
+		uint32_t texture = 0;	
 	};
 	std::vector< ObjectInstance > object_instances;
 

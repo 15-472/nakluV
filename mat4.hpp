@@ -13,6 +13,9 @@ static_assert(sizeof(mat4) == 16*4, "mat4 is exactly 16 32-bit floats.");
 using vec4 = std::array< float, 4>;
 static_assert(sizeof(vec4) == 4*4, "vec4 is exactly 4 32-bit floats.");
 
+using vec3 = std::array< float, 3>;
+static_assert(sizeof(vec3) == 3*4, "vec3 is exactly 3 32-bit floats.");
+
 inline vec4 operator*(mat4 const &A, vec4 const &b) {
     vec4 ret;
     //compute ret = A * b:
@@ -58,6 +61,30 @@ inline mat4 perspective(float vfov, float aspect, float near, float far){
         0.f,    0.f, -0.5f - 0.5f * (f+n)/(f-n),-1.f,
         0.f,    0.f,            -(f*n)/(f-n), 0.f,
     };
+}
+
+inline mat4 quaternianToMatrix(vec4 quaternian){
+    float x = quaternian[0];
+    float y = quaternian[1];
+    float z = quaternian[2];
+    float w = quaternian[3];
+
+    float m_00 = 1.0f - 2.0f * (y * y + z * z);
+    float m_01 = 2.0f * (x * y - w * z);
+    float m_02 = 2.0f * (x * z + w * y);
+
+    float m_10 = 2.0f * (x * y + w * z);
+    float m_11 = 1.0f - 2.0f * (x * x + z * z);
+    float m_12 = 2.0f * (y * z - w * x);
+
+    float m_20 = 2.0f * (x * z - w * y);
+    float m_21 = 2.0f * (y * z + w * x);
+    float m_22 = 1.0f - 2.0f * (x * x + y * y);
+
+    return mat4{m_00, m_10, m_20, 0.f,
+                m_01, m_11, m_21, 0.f,
+                m_02, m_12, m_22, 0.f,
+                0.f,  0.f,  0.f,  1.f};
 }
 
 //look at matrix:

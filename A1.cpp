@@ -3,7 +3,7 @@
 #define _USE_MATH_DEFINES
 #endif
 
-#include "Tutorial.hpp"
+#include "A1.hpp"
 
 #include "VK.hpp"
 
@@ -12,9 +12,10 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <stack>          
 
 
-Tutorial::Tutorial(RTG &rtg_) : rtg(rtg_) {
+A1::A1(RTG &rtg_) : rtg(rtg_) {
 	//select a depth format:
 	//  (at least one of these two must be supported, according to the spec; but neither are required)
 	depth_format = rtg.helpers.find_image_format(
@@ -261,145 +262,77 @@ Tutorial::Tutorial(RTG &rtg_) : rtg(rtg_) {
 		std::vector< PosNorTexVertex > vertices;
 
 		
-		{ //A [-1,1]x[-1,1]x{0} quadrilateral:
-			plane_vertices.first = uint32_t(vertices.size());
-			vertices.emplace_back(PosNorTexVertex{
-				.Position{ .x = -1.0f, .y = -1.0f, .z = 0.0f },
-				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
-				.TexCoord{ .s = 0.0f, .t = 0.0f },
-			});
-			vertices.emplace_back(PosNorTexVertex{
-				.Position{ .x = 1.0f, .y = -1.0f, .z = 0.0f },
-				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
-				.TexCoord{ .s = 1.0f, .t = 0.0f },
-			});
-			vertices.emplace_back(PosNorTexVertex{
-				.Position{ .x = -1.0f, .y = 1.0f, .z = 0.0f },
-				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
-				.TexCoord{ .s = 0.0f, .t = 1.0f },
-			});
-			vertices.emplace_back(PosNorTexVertex{
-				.Position{ .x = 1.0f, .y = 1.0f, .z = 0.0f },
-				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
-				.TexCoord{ .s = 1.0f, .t = 1.0f },
-			});
-			vertices.emplace_back(PosNorTexVertex{
-				.Position{ .x = -1.0f, .y = 1.0f, .z = 0.0f },
-				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
-				.TexCoord{ .s = 0.0f, .t = 1.0f },
-			});
-			vertices.emplace_back(PosNorTexVertex{
-				.Position{ .x = 1.0f, .y = -1.0f, .z = 0.0f },
-				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
-				.TexCoord{ .s = 1.0f, .t = 0.0f },
-			});
+		// { //A [-1,1]x[-1,1]x{0} quadrilateral:
+		// 	plane_vertices.first = uint32_t(vertices.size());
+		// 	vertices.emplace_back(PosNorTexVertex{
+		// 		.Position{ .x = -1.0f, .y = -1.0f, .z = 0.0f },
+		// 		.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+		// 		.TexCoord{ .s = 0.0f, .t = 0.0f },
+		// 	});
+		// 	vertices.emplace_back(PosNorTexVertex{
+		// 		.Position{ .x = 1.0f, .y = -1.0f, .z = 0.0f },
+		// 		.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+		// 		.TexCoord{ .s = 1.0f, .t = 0.0f },
+		// 	});
+		// 	vertices.emplace_back(PosNorTexVertex{
+		// 		.Position{ .x = -1.0f, .y = 1.0f, .z = 0.0f },
+		// 		.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+		// 		.TexCoord{ .s = 0.0f, .t = 1.0f },
+		// 	});
+		// 	vertices.emplace_back(PosNorTexVertex{
+		// 		.Position{ .x = 1.0f, .y = 1.0f, .z = 0.0f },
+		// 		.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+		// 		.TexCoord{ .s = 1.0f, .t = 1.0f },
+		// 	});
+		// 	vertices.emplace_back(PosNorTexVertex{
+		// 		.Position{ .x = -1.0f, .y = 1.0f, .z = 0.0f },
+		// 		.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+		// 		.TexCoord{ .s = 0.0f, .t = 1.0f },
+		// 	});
+		// 	vertices.emplace_back(PosNorTexVertex{
+		// 		.Position{ .x = 1.0f, .y = -1.0f, .z = 0.0f },
+		// 		.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+		// 		.TexCoord{ .s = 1.0f, .t = 0.0f },
+		// 	});
 
-			plane_vertices.count = uint32_t(vertices.size()) - plane_vertices.first;
-		}
+		// 	plane_vertices.count = uint32_t(vertices.size()) - plane_vertices.first;
+		// }
 
-		{ //A torus:
-			torus_vertices.first = uint32_t(vertices.size());
-
-			//will paramertize with (u,v) where:
-			// - u is angle around main axis (+z)
-			// - v is angle around the tube
-
-			constexpr float R1 = 0.75f; //main radius
-			constexpr float R2 = 0.15f; //tube radius
-
-			constexpr uint32_t U_STEPS = 20;
-			constexpr uint32_t V_STEPS = 16;
-
-			//texture repeats around the torus:
-			constexpr float V_REPEATS = 2.0f;
-			float U_REPEATS = std::ceil(V_REPEATS / R2 * R1);
-
-			auto emplace_vertex = [&](uint32_t ui, uint32_t vi) {
-				//convert steps to angles:
-				// (doing the mod since trig on 2 M_PI may not exactly match 0)
-				float ua = (ui % U_STEPS) / float(U_STEPS) * 2.0f * float(M_PI);
-				float va = (vi % V_STEPS) / float(V_STEPS) * 2.0f * float(M_PI);
-
-				vertices.emplace_back( PosNorTexVertex{
-					.Position{
-						.x = (R1 + R2 * std::cos(va)) * std::cos(ua),
-						.y = (R1 + R2 * std::cos(va)) * std::sin(ua),
-						.z = R2 * std::sin(va),
-					},
-					.Normal{
-						.x = std::cos(va) * std::cos(ua),
-						.y = std::cos(va) * std::sin(ua),
-						.z = std::sin(va),
-					},
-					.TexCoord{
-						.s = ui / float(U_STEPS) * U_REPEATS,
-						.t = vi / float(V_STEPS) * V_REPEATS,
-					},
-				});
-			};
-
-			for (uint32_t ui = 0; ui < U_STEPS; ++ui) {
-				for (uint32_t vi = 0; vi < V_STEPS; ++vi) {
-					emplace_vertex(ui, vi);
-					emplace_vertex(ui+1, vi);
-					emplace_vertex(ui, vi+1);
-
-					emplace_vertex(ui, vi+1);
-					emplace_vertex(ui+1, vi);
-					emplace_vertex(ui+1, vi+1);
+		{// Create mesh vertices
+			for(const auto & [key, value] :rtg.meshes){
+				RTG::Mesh mesh = value;
+				std::cout << "Creating mesh " << key << " with size " << mesh.indices.size() << std::endl;
+				std::cout << "position size " << mesh.position.size() << std::endl;
+				ObjectVertices this_vertices;
+				this_vertices.first	 = uint32_t(vertices.size());
+				//Assume Triangle_List
+				AABB box;
+				box.minX = mesh.position[0];
+				box.maxX = mesh.position[0];
+				box.minY = mesh.position[1];
+				box.maxY = mesh.position[1];
+				box.minZ = mesh.position[2];
+				box.maxZ = mesh.position[2];
+				for(uint32_t idx : mesh.indices){
+					vertices.emplace_back(PosNorTexVertex{
+						.Position{ .x = mesh.position[idx * 3], .y = mesh.position[idx * 3 + 1], .z = mesh.position[idx * 3 + 2] },
+						.Normal{ .x = mesh.normal[idx * 3], .y = mesh.normal[idx * 3 + 1], .z = mesh.normal[idx * 3 + 2]},
+						.TexCoord{ .s = mesh.texcoord[idx * 2], .t = mesh.texcoord[idx * 2 + 1] },
+					});
+					if(mesh.position[idx * 3] < box.minX) box.minX = mesh.position[idx * 3];
+					if(mesh.position[idx * 3 + 1] < box.minY) box.minY = mesh.position[idx * 3 + 1];
+					if(mesh.position[idx * 3 + 2] < box.minZ) box.minZ = mesh.position[idx * 3 + 2];
+					if(mesh.position[idx * 3] > box.minX) box.minX = mesh.position[idx * 3];
+					if(mesh.position[idx * 3 + 1] > box.minY) box.minY = mesh.position[idx * 3 + 1];
+					if(mesh.position[idx * 3 + 2] > box.minZ) box.minZ = mesh.position[idx * 3 + 2];
 				}
+
+
+				this_vertices.count = uint32_t(vertices.size()) - this_vertices.first;
+				mesh_box[key] = box;
+				mesh_vertices[key] = this_vertices;
+
 			}
-
-			torus_vertices.count = uint32_t(vertices.size()) - torus_vertices.first;
-		}
-
-		{//A sphere:
-			sphere_vertices.first = uint32_t(vertices.size());
-
-
-			uint32_t R_STEPS = 10;
-
-			float R = 0.5f;
-			
-			auto emplace_vertex = [&](uint32_t ui, uint32_t vi) {
-				//convert steps to angles:
-				// (doing the mod since trig on 2 M_PI may not exactly match 0)
-				float u = (float(ui) / float(R_STEPS)) * 2.0f * float(M_PI);
-				float v = float(vi) / float(R_STEPS) * float(M_PI);
-
-				vertices.emplace_back( PosNorTexVertex{
-					.Position{
-						.x = R * std::cos(u) * std::sin(v),
-						.y = R * std::sin(u) * std::sin(v),
-						.z = R * std::cos(v),
-					},
-					.Normal{
-						.x = std::cos(u) * std::sin(v),
-						.y = std::sin(u) * std::sin(v),
-						.z = std::cos(v),
-					},
-					.TexCoord{
-						.s = u,
-						.t = v,
-					},
-				});
-			};
-
-			
-			for (uint32_t ui = 0; ui < R_STEPS; ++ui) {
-				for (uint32_t vi = 0; vi < R_STEPS; ++vi) {
-					emplace_vertex(ui, vi);
-					emplace_vertex(ui+1, vi+1);
-					emplace_vertex(ui+1, vi);
-
-					emplace_vertex(ui, vi);
-					emplace_vertex(ui, vi+1);
-					emplace_vertex(ui+1, vi+1);
-				}
-			}
-			
-
-			sphere_vertices.count = uint32_t(vertices.size()) - sphere_vertices.first;
 		}
 
 		size_t bytes = vertices.size() * sizeof(vertices[0]);
@@ -418,6 +351,14 @@ Tutorial::Tutorial(RTG &rtg_) : rtg(rtg_) {
 
 	{ //make some textures
 		textures.reserve(2);
+		// textures.reserve(rtg.materials.size());
+
+		//Loop over materials to get the textures
+		// for(const auto & [key, value] : rtg.materials){
+		// 	RTG::Material material = value;
+
+		// }
+
 
 		{ //texture 0 will be a dark grey / light grey checkerboard with a red square at the origin.
 			//actually make the texture:
@@ -590,14 +531,19 @@ Tutorial::Tutorial(RTG &rtg_) : rtg(rtg_) {
 		}
 
 		vkUpdateDescriptorSets( rtg.device, uint32_t(writes.size()), writes.data(), 0, nullptr );
+	} 
+
+
+	{//Initialize cameras
+		//Scene camera
 	}
 }
 
-Tutorial::~Tutorial() {
+A1::~A1() {
 	//just in case rendering is still in flight, don't destroy resources:
 	//(not using VK macro to avoid throw-ing in destructor)
 	if (VkResult result = vkDeviceWaitIdle(rtg.device); result != VK_SUCCESS) {
-		std::cerr << "Failed to vkDeviceWaitIdle in Tutorial::~Tutorial [" << string_VkResult(result) << "]; continuing anyway." << std::endl;
+		std::cerr << "Failed to vkDeviceWaitIdle in A1::~A1 [" << string_VkResult(result) << "]; continuing anyway." << std::endl;
 	}
 
 	if (texture_descriptor_pool) {
@@ -691,7 +637,7 @@ Tutorial::~Tutorial() {
 	}
 }
 
-void Tutorial::on_swapchain(RTG &rtg_, RTG::SwapchainEvent const &swapchain) {
+void A1::on_swapchain(RTG &rtg_, RTG::SwapchainEvent const &swapchain) {
 	//clean up existing framebuffers (and depth image):
 	if (swapchain_depth_image.handle != VK_NULL_HANDLE) {
 		destroy_framebuffers();
@@ -750,7 +696,7 @@ void Tutorial::on_swapchain(RTG &rtg_, RTG::SwapchainEvent const &swapchain) {
 	//TODO: Swapchain print
 }
 
-void Tutorial::destroy_framebuffers() {
+void A1::destroy_framebuffers() {
 	for (VkFramebuffer &framebuffer : swapchain_framebuffers) {
 		assert(framebuffer != VK_NULL_HANDLE);
 		vkDestroyFramebuffer(rtg.device, framebuffer, nullptr);
@@ -766,7 +712,7 @@ void Tutorial::destroy_framebuffers() {
 }
 
 
-void Tutorial::render(RTG &rtg_, RTG::RenderParams const &render_params) {
+void A1::render(RTG &rtg_, RTG::RenderParams const &render_params) {
 	//assert that parameters are valid:
 	assert(&rtg == &rtg_);
 	assert(render_params.workspace_index < workspaces.size());
@@ -1047,17 +993,6 @@ void Tutorial::render(RTG &rtg_, RTG::RenderParams const &render_params) {
 				vkCmdDraw(workspace.command_buffer, inst.vertices.count, 1, inst.vertices.first, index);
 			}
 
-			//draw all vertices:
-			// vkCmdDraw(workspace.command_buffer, uint32_t(object_vertices.size / sizeof(ObjectsPipeline::Vertex)),
-			// 			1, 0, 0);
-
-			//draw torus vertices:
-			// vkCmdDraw(workspace.command_buffer, torus_vertices.count, 1, torus_vertices.first, 0);
-
-			//draw Sphere vertices:
-			// vkCmdDraw(workspace.command_buffer, sphere_vertices.count, 1, sphere_vertices.first, 0);
-
-
 		}
 
 
@@ -1096,31 +1031,35 @@ void Tutorial::render(RTG &rtg_, RTG::RenderParams const &render_params) {
 
 
 
-void Tutorial::update(float dt) {
+void A1::update(float dt) {
 	time = std::fmod( time + dt, 60.0f);
 
-	{ //camera orbiting the origin:
-		float ang = float(M_PI) * 2.f * 4.f * (time / 60.f);
-		CLIP_FROM_WORLD = perspective(
-			60.f / float(M_PI) * 180.f, //vfov
-			rtg.swapchain_extent.width / float(rtg.swapchain_extent.height), //aspect
-			0.1f, //near
-			1000.f //far
-		) * look_at(
-			3.f * std::cos(ang), 3.f * std::sin(ang), 1.f, //eye
-			0.f, 0.f, 0.5, //target
-			0.f, 0.f, 1.f //up
-		);
-	}
+	object_instances.clear();
 
+	// { //camera orbiting the origin:
+	// 	float ang = float(M_PI) * 2.f * 4.f * (time / 60.f);
+	// 	CLIP_FROM_WORLD = perspective(
+	// 		60.f / float(M_PI) * 180.f, //vfov
+	// 		rtg.swapchain_extent.width / float(rtg.swapchain_extent.height), //aspect
+	// 		0.1f, //near
+	// 		1000.f //far
+	// 	) * look_at(
+	// 		3.f * std::cos(ang), 3.f * std::sin(ang), 1.f, //eye
+	// 		0.f, 0.f, 0.5f, //target
+	// 		0.f, 0.f, 1.f //up
+	// 	);
+	// }
+
+	
+	 
 	{ //static sun and sky:
 		world.SKY_DIRECTION.x = 0.0f;
 		world.SKY_DIRECTION.y = 0.0f;
 		world.SKY_DIRECTION.z = 1.0f;
 
-		world.SKY_ENERGY.r = 0.1f;
-		world.SKY_ENERGY.g = 0.1f;
-		world.SKY_ENERGY.b = 0.2f;
+		world.SKY_ENERGY.r = 0.2f;
+		world.SKY_ENERGY.g = 0.2f;
+		world.SKY_ENERGY.b = 0.4f;
 
 		world.SUN_DIRECTION.x = 6.0f / 23.0f;
 		world.SUN_DIRECTION.y = 13.0f / 23.0f;
@@ -1130,50 +1069,143 @@ void Tutorial::update(float dt) {
 		world.SUN_ENERGY.g = 1.0f;
 		world.SUN_ENERGY.b = 0.9f;
 	}
+
+
+
+	// MOM get the camera
+	if(rtg.camera_mode.compare("user") == 0){
+		RTG::OrbitCamera oc = rtg.user_camera;
+		CLIP_FROM_WORLD = perspective(
+			rtg.active_camera.vfov, //vfov
+			rtg.active_camera.aspect, //aspect
+			rtg.active_camera.near, //near
+			rtg.active_camera.far //far
+		) * look_at(
+			oc.radius * std::cos(oc.azimuth) * std::sin(oc.elevation), 
+			oc.radius * std::sin(oc.azimuth) * std::sin(oc.elevation), 
+			oc.radius * std::cos(oc.elevation),
+			oc.target[0], oc.target[1], oc.target[2], //target
+			0.f, 0.f, 1.f //up
+		);
+	} else {
+		for(std::string root : rtg.scene.roots){
+			RTG::Node this_node = rtg.nodes[root];
+			
+			std::stack<mat4> node_transform_stack;
+			std::stack<RTG::Node> node_stack;
+			
+			mat4 origin = mat4{1.f, 0.f, 0.f, 0.f, 
+								0.f, 1.f, 0.f, 0.f,
+								0.f, 0.f, 1.f, 0.f,
+								0.f, 0.f, 0.f, 1.f};
+			node_transform_stack.push(origin); //Store World from parent transform
+			node_stack.push(this_node);
+			while(!node_stack.empty()){
+				this_node = node_stack.top();
+				node_stack.pop();
+				mat4 WORLD_FROM_PARENT = node_transform_stack.top();
+				node_transform_stack.pop();
+				mat4 WORLD_FROM_LOCAL = WORLD_FROM_PARENT * this_node.parent_from_local;
+
+				for(std::string child : this_node.children){
+					node_stack.push(rtg.nodes[child]);
+					node_transform_stack.push(WORLD_FROM_LOCAL);
+				}
+				if(!this_node.camera.empty() && this_node.camera.compare(rtg.active_camera.name) == 0){
+					RTG::Camera camera = rtg.cameras[this_node.camera];
+					// float ang = float(M_PI) * 2.f * 4.f * (time / 60.f);
+					vec4 eye = WORLD_FROM_LOCAL * vec4{0.f, 0.f, 0.f, 1.f};
+					vec4 target = WORLD_FROM_LOCAL * vec4{0.f, 0.f, -1.f, 1.f};
+					vec4 up = WORLD_FROM_LOCAL * vec4{0.f, 1.f, 0.f, 1.f};
+
+					CLIP_FROM_WORLD = perspective(
+						camera.vfov, //vfov
+						camera.aspect, //aspect
+						camera.near, //near
+						camera.far //far
+					) * look_at(
+						eye[0]/eye[3], eye[1]/eye[3], eye[2]/eye[3], //eye
+						target[0]/target[3], target[1]/target[3], target[2]/target[3], //target
+						up[0], up[1], up[2]//up
+					);
+					// std::cout << "Eye " << eye[0] << " , " << eye[1] <<" , " << eye[2] <<" , " << eye[3]  << std::endl;
+					// std::cout << "Target " << target[0] << " , " << target[1] <<" , " << target[2] <<" , " << target[3]  << std::endl;
+				}
+				
+			}
+		}
+	}
 	
-	{ //make some crossing lines at different depths:
-		lines_vertices.clear();
-		constexpr size_t count = 2 * 50 + 2 * 50;
-		lines_vertices.reserve(count);
-		//horizontal lines at sin z
-		for (uint32_t i = 0; i < 50; ++i) {
-			float y = (i + 0.5f) / 50.0f * 2.0f - 1.0f;
-			float z = 0.2f + std::sin(float(M_PI) * std::fmod(i + time * 2.f, 50.f) / 25.0f);
-			lines_vertices.emplace_back(PosColVertex{
-				.Position{.x = -1.0f, .y = y, .z = z},
-				.Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0xff},
-			});
-			lines_vertices.emplace_back(PosColVertex{
-				.Position{.x = 1.0f, .y = y, .z = z},
-				.Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0xff},
-			});
+	//Find that mesh
+	for(std::string root : rtg.scene.roots){
+		RTG::Node this_node = rtg.nodes[root];
+		
+		std::stack<mat4> node_transform_stack;
+		std::stack<RTG::Node> node_stack;
+		
+		mat4 origin = mat4{1.f, 0.f, 0.f, 0.f, 
+							0.f, 1.f, 0.f, 0.f,
+							0.f, 0.f, 1.f, 0.f,
+							0.f, 0.f, 0.f, 1.f};
+		node_transform_stack.push(origin); //Store World from parent transform
+		node_stack.push(this_node);
+		while(!node_stack.empty()){
+			this_node = node_stack.top();
+			node_stack.pop();
+			mat4 WORLD_FROM_PARENT = node_transform_stack.top();
+			node_transform_stack.pop();
+			mat4 WORLD_FROM_LOCAL = WORLD_FROM_PARENT * this_node.parent_from_local;
+
+			for(std::string child : this_node.children){
+				node_stack.push(rtg.nodes[child]);
+				node_transform_stack.push(WORLD_FROM_LOCAL);
+			}
+
+			
+
+			//Check the Mesh
+			if(!this_node.mesh.empty()){
+				//Check culling
+				RTG::Mesh this_mesh = rtg.meshes[this_node.mesh];
+				if(in_view(mesh_box[this_mesh.name], WORLD_FROM_LOCAL)){
+					uint32_t tex_num = 0;
+					if(!this_mesh.material.empty()){
+						tex_num = rtg.materials[this_mesh.material].texture_number;
+					}
+					object_instances.emplace_back(ObjectInstance{
+						.vertices = mesh_vertices[this_mesh.name],
+						.transform{
+							.CLIP_FROM_LOCAL = CLIP_FROM_WORLD * WORLD_FROM_LOCAL,
+							.WORLD_FROM_LOCAL = WORLD_FROM_LOCAL,
+							.WORLD_FROM_LOCAL_NORMAL = WORLD_FROM_LOCAL,
+						},
+						.texture = tex_num,
+					});
+				}
+			}
+			//Check the Light
+			if(!this_node.light.empty()){
+				
+			}
+			//TODO: Environment later
+			// if(!this_node.mesh){
+				
+			// }
 		}
-		//vertical lines cos z 
-		for (uint32_t i = 0; i < 50; ++i) {
-			float x = (i + 0.5f) / 50.0f * 2.0f - 1.0f;
-			float z = 0.2f + std::cos(float(M_PI) * std::fmod(i + time * 2.f, 50.f) / 25.0f);
-			lines_vertices.emplace_back(PosColVertex{
-				.Position{.x = x, .y =-1.0f, .z = z},
-				.Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0xff},
-			});
-			lines_vertices.emplace_back(PosColVertex{
-				.Position{.x = x, .y = 1.0f, .z = z},
-				.Color{ .r = 0x00, .g = 0x00, .b = 0xff, .a = 0xff},
-			});
-		}
-		assert(lines_vertices.size() == count);
 	}
 
-	{ //make some objects:
-		object_instances.clear();
 
+	{ //make some objects:
+		
 		{ //plane translated +x by one unit:
 			mat4 WORLD_FROM_LOCAL{
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				1.0f, 0.0f, 0.0f, 1.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
 			};
+
+			
 
 			object_instances.emplace_back(ObjectInstance{
 				.vertices = plane_vertices,
@@ -1186,6 +1218,7 @@ void Tutorial::update(float dt) {
 			});
 			
 		}
+
 		{ //torus translated -x by one unit and rotated CCW around +y:
 			float ang = time / 60.0f * 2.0f * float(M_PI) * 10.0f;
 			float ca = std::cos(ang);
@@ -1252,5 +1285,52 @@ void Tutorial::update(float dt) {
 }
 
 
-void Tutorial::on_input(InputEvent const &) {
+void A1::on_input(InputEvent const &input) {
+	if(input.type == InputEvent::KeyDown) {
+		if(input.key.key == 85){ //U
+			std::cout << "Entering user Camera mode" << std::endl;
+			rtg.camera_mode = "user";
+		}
+		if(input.key.key == 83){ //S
+			std::cout << "Entering user Scene mode" << std::endl;
+			rtg.camera_mode = "scene";
+		}
+	}
+	if(input.type == InputEvent::MouseButtonDown){
+		mouse_down = true;
+		x0 = input.button.x;
+		y0 = input.button.y;
+	}
+	if(input.type == InputEvent::MouseButtonUp){
+		mouse_down = false;
+	}
+	if(mouse_down && input.type == InputEvent::MouseMotion && rtg.camera_mode.compare("user") == 0){
+		float dx = x0 - input.button.x;
+		float dy = y0 - input.button.y;
+		
+		dx = dx / 180.f;
+		dy = dy / 180.f;
+
+		//Translate 
+		rtg.user_camera.elevation = std::min(std::max(rtg.user_camera.elevation+dy, 0.f), float(M_PI));
+		rtg.user_camera.azimuth += dx;
+		if(rtg.user_camera.azimuth > 2.f * float(M_PI)){
+			rtg.user_camera.azimuth -= 2.f * float(M_PI);
+		} else if(rtg.user_camera.azimuth < 0.f){
+			rtg.user_camera.azimuth += 2.f * float(M_PI);
+		}
+		x0 = input.button.x;
+		y0 = input.button.y;
+	}
+	if(input.type == InputEvent::MouseWheel && rtg.camera_mode.compare("user") == 0){
+		rtg.user_camera.radius = std::max(rtg.user_camera.radius + input.wheel.y, 0.01f);
+	}
+}
+
+void A1::create_frustum(){
+	return;
+}
+
+bool A1::in_view(AABB box, mat4 transform){
+	return true;
 }

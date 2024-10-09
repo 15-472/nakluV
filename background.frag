@@ -7,5 +7,5 @@ layout(push_constant) uniform Push {
 };
 
 void main() {
-   outColor = vec4(fract(sin((inPosition.x + inPosition.y - 1.0) * 50) * 0.5 + 1.0), fract(cos((1.0 - inPosition.x + inPosition.y) * 50)* 0.5 + 1.0 ), fract(sin(time * 3.14159/30 ) * 0.5  + 1.0), 1.0);  
+   outColor = vec4(0., 0., 0., 1.0);  
 }

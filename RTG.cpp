@@ -1,6 +1,8 @@
 #include "RTG.hpp"
 
 #include "VK.hpp"
+#include "sejp.hpp"
+
 
 
 #include <vulkan/vulkan_core.h>
@@ -15,6 +17,7 @@
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 #include <set>
 
 void RTG::Configuration::parse(int argc, char **argv) {
@@ -42,6 +45,18 @@ void RTG::Configuration::parse(int argc, char **argv) {
 			};
 			surface_extent.width = conv("width");
 			surface_extent.height = conv("height");
+		} else if(arg == "--scene"){
+			if (argi + 1 >= argc) throw std::runtime_error("--scene requires a scene file.");
+			argi += 1;
+			scene_file = argv[argi];
+		} else if(arg == "--camera"){
+			if (argi + 1 >= argc) throw std::runtime_error("--camera requires a name.");
+			argi += 1;
+			main_camera = argv[argi];
+		} else if(arg == "--culling"){
+			if (argi + 1 >= argc) throw std::runtime_error("--culling requires a mode.");
+			argi += 1;
+			cull_mode = argv[argi];
 		} else {
 			throw std::runtime_error("Unrecognized argument '" + arg + "'.");
 		}
@@ -379,8 +394,425 @@ RTG::RTG(Configuration const &configuration_) : helpers(*this) {
 		}
 	}
 
+	{// create scene
+		std::cout << "create scene from :" << configuration.scene_file << std::endl;
+		if(configuration.scene_file != ""){ //load scene
+			std::string scene_folder = "";
+			auto pos = configuration.scene_file.find_last_of('\\');
+			if(pos > 0 ){
+				scene_folder = configuration.scene_file.substr(0 , pos+1);
+			}
+			sejp::value val = sejp::load(configuration.scene_file);
+			std::cout << "loaded file!!!!" << std::endl;	
+			auto header = val.as_array().value();
+			if(header[0].as_string().value().compare(0, 6, "s72-v2") == 0){
+				// auto s72 = header[1];
+				for(int i = 1; i < header.size(); i++){
+					auto object_json = header[i].as_object().value();
+					std::string type = object_json.at("type").as_string().value();
+					std::string name = object_json.at("name").as_string().value();
+					std::cout << "Object is type : " << type << ", and name : " << name << std::endl;
+					if(type.compare("SCENE") == 0){
+						std::cout << "Loading scene" << std::endl;
+						scene.name = name;
+						auto roots = object_json.at("roots").as_array().value();
+						std::cout << "Roots ";
+						for(auto root : roots){
+							scene.roots.push_back(root.as_string().value());
+							std::cout << root.as_string().value() <<", ";
+						}
+						std::cout << std::endl;
+					} else if(type.compare("NODE") == 0){
+						std::cout << "Loading node" << std::endl;
+						Node node;
+						node.name = name;
+						
+						if(object_json.contains("translation")){
+							auto translation = object_json.at("translation").as_array().value();
+							if(translation.size() == 3){
+								node.translation = {float(translation[0].as_number().value()),
+														float(translation[1].as_number().value()), 
+														float(translation[2].as_number().value()), 1.f};
+							}
+							// std::cout << "Translation " << node.translation[0] << " , " << node.translation[1] <<" , " << node.translation[2] << std::endl;
+						}
+						if(object_json.contains("rotation")){
+							auto rotation = object_json.at("rotation").as_array().value();
+							if(rotation.size() == 4){
+								node.rotation = {float(rotation[0].as_number().value()),
+												float(rotation[1].as_number().value()), 
+												float(rotation[2].as_number().value()),
+												float(rotation[3].as_number().value())};
+							}
+						}
+						if(object_json.contains("scale")){
+							auto scale = object_json.at("scale").as_array().value();
+							if(scale.size() == 3){
+								node.scale = {float(scale[0].as_number().value()),
+												float(scale[1].as_number().value()), 
+												float(scale[2].as_number().value()),1.f};
+							}
+						}
+						if(object_json.contains("children")){
+							for(auto children : object_json.at("children").as_array().value()){
+								node.children.push_back(children.as_string().value());
+							}
+						}
+						if(object_json.contains("camera")){
+							auto camera = object_json.at("camera").as_string();
+							if(camera.has_value()){
+								node.camera = camera.value();
+							}
+						}
+						if(object_json.contains("mesh")){
+							auto mesh = object_json.at("mesh").as_string();
+							if(mesh.has_value()){
+								node.mesh = mesh.value();
+							}
+						}
+						if(object_json.contains("environment")){
+							auto environment = object_json.at("environment").as_string();
+							if(environment.has_value()){
+								node.environment = environment.value();
+							}
+						}
+						if(object_json.contains("light")){
+							auto light = object_json.at("light").as_string();
+							if(light.has_value()){
+								node.light = light.value();
+							}
+						}
+						node.make_parent_from_local();
+						nodes[name] = node;
+					} else if(type.compare("MESH") == 0){
+						std::cout << "Loading mesh" << std::endl;
+						Mesh mesh;
+						mesh.name = name;
+						mesh.topology = object_json.at("topology").as_string().value();
+						mesh.count =  uint32_t(object_json.at("count").as_number().value());
+						mesh.indices = std::vector<uint32_t>(mesh.count);	
+						
+						if(object_json.contains("indices")){
+							mesh.indices_info.used = true;
+							auto indices_obj = object_json.at("indices").as_object().value();
+							mesh.indices_info.src = indices_obj.at("src").as_string().value();
+							mesh.indices_info.offset = uint32_t(indices_obj.at("offset").as_number().value());
+							mesh.indices_info.format = indices_obj.at("format").as_string().value();
+
+							//Pull the indices
+							std::ifstream infile(mesh.indices_info.src.c_str() , std::ios::binary);
+							//TODO indices;
+							uint32_t num;
+							for(uint32_t j = 0 ; j < mesh.count; j++ ){
+								if(mesh.indices_info.format.compare("UINT32")){
+									infile >> num;
+									mesh.indices[j] = num;
+								} else {
+									mesh.indices[j] = j;
+								}
+							}
+						} else {
+							for(uint32_t j = 0; j < mesh.count; j++){
+								mesh.indices[j] = j;
+							}
+						}
+
+						//Get a long vector and then iterate over all of the floats with respect to each attribute
+						//Huge while loop
+
+						if(object_json.contains("attributes")){
+							auto attributes = object_json.at("attributes").as_object().value();
+							for (const auto& [key, value] : attributes) {
+								std::cout << key <<" as attributes" << std::endl;
+								Mesh::Attributes attribute;
+								auto attr_obj = attributes.at(key).as_object().value();
+								attribute.used = true;
+								attribute.src = scene_folder + attr_obj.at("src").as_string().value();
+								attribute.offset = uint32_t(attr_obj.at("offset").as_number().value());
+								attribute.stride = uint32_t(attr_obj.at("stride").as_number().value());
+								attribute.format = attr_obj.at("format").as_string().value();
+
+								//Pull the indices
+
+								std::ifstream infile(attribute.src.c_str() , std::ios::binary);
+								if (!infile.is_open()) {
+									std::cerr << "Error opening file!" << std::endl;
+								}	
+
+								std::vector<float> attr_vals;
+								if(attribute.format.compare("R32G32B32_SFLOAT") == 0 || attribute.format.compare("R32G32_SFLOAT") == 0
+								|| attribute.format.compare("R32G32B32A32_SFLOAT") == 0 || attribute.format.compare("R32_SFLOAT") == 0){
+									// std::vector<float> floats;
+
+									uint32_t size_attr = 0;
+									//find how many
+									if(attribute.format.compare("R32_SFLOAT") == 0){
+										size_attr = 1;
+									} else if(attribute.format.compare("R32G32_SFLOAT") == 0){
+										size_attr = 2;
+									} else if(attribute.format.compare("R32G32B32_SFLOAT") == 0){
+										size_attr = 3;
+									} else if (attribute.format.compare("R32G32B32A32_SFLOAT") == 0){
+										size_attr = 4;
+									}
+
+									float num = 0.f;
+									uint32_t p = attribute.offset;
+									uint32_t step = attribute.stride;
+									infile.seekg(p);
+									uint32_t sub_iter = 0;
+									while(infile.read(reinterpret_cast<char*>(&num), sizeof(float)) && p < step * mesh.count){
+										attr_vals.push_back(num);
+										// std::cout << num << " at " << p << "    ";
+										sub_iter++;
+										if(sub_iter < size_attr){
+											infile.seekg(p + sizeof(float) * sub_iter);
+										} else {
+											sub_iter = 0;
+											p += step;
+											infile.seekg(p);
+										}
+									}
+
+
+									// std::cout << std::endl;
+									std::cout << "floats found from " << attribute.src.c_str() << " : "  << attr_vals.size() << std::endl;
+
+									if (key.compare("POSITION") == 0){
+										mesh.position_attr = attribute;
+										mesh.position.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("NORMAL") == 0){
+										mesh.normal_attr = attribute;
+										mesh.normal.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("TANGENT") == 0){
+										mesh.tangent_attr = attribute;
+										mesh.tangent.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("TEXCOORD") == 0){
+										mesh.texcoord_attr = attribute;
+										mesh.texcoord.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("COLOR") == 0){
+										std::cout << "No color attributes yet" << std::endl;
+									}
+								} else if (attribute.format.compare("R8G8B8A8_UNORM") == 0){
+									
+									uint32_t size_attr = 0;
+									//find how many
+									if(attribute.format.compare("R8_UNORM") == 0){
+										size_attr = 1;
+									} else if(attribute.format.compare("R8G8_UNORM") == 0){
+										size_attr = 2;
+									} else if(attribute.format.compare("R8G8B8_UNORM") == 0){
+										size_attr = 3;
+									} else if (attribute.format.compare("R8G8B8A8_UNORM") == 0){
+										size_attr = 4;
+									}
+									
+									
+									uint8_t num;
+									uint32_t p = attribute.offset;
+									uint32_t step = attribute.stride;
+									infile.seekg(p);
+									uint32_t sub_iter = 0; 
+									while(infile.read(reinterpret_cast<char*>(&num), sizeof(uint8_t))){
+										attr_vals.push_back(float(num));	
+										sub_iter++;
+										if(sub_iter < size_attr){
+											infile.seekg(p + sizeof(uint8_t) * sub_iter);
+										} else {
+											sub_iter = 0;
+											p += step;	
+											infile.seekg(p);
+										}
+									}
+
+									if (key.compare("POSITION") == 0){
+										mesh.position_attr = attribute;
+										mesh.position.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("NORMAL") == 0){
+										mesh.normal_attr = attribute;
+										mesh.normal.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("TANGENT") == 0){
+										mesh.tangent_attr = attribute;
+										mesh.tangent.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("TEXCOORD") == 0){
+										mesh.texcoord_attr = attribute;
+										mesh.texcoord.assign(attr_vals.begin(), attr_vals.end());
+									} else if(key.compare("COLOR") == 0){
+										std::cout << "No color attributes yet" << std::endl;
+									}
+								} else {
+									std::cout << "Attribute format not supported yet " << std::endl;
+								}
+								infile.close();
+							}
+						}
+						if(object_json.contains("material")){
+							mesh.material = object_json.at("material").as_string().value();
+						}
+						meshes[name] = mesh;
+					} else if(type.compare("CAMERA") == 0){
+						std::cout << "Loading camera" << std::endl;
+						Camera camera;
+						camera.name = name;
+						if(object_json.contains("perspective")){
+							auto perspective_obj = object_json.at("perspective").as_object().value();
+							if(perspective_obj.contains("aspect")){
+								camera.aspect = float(perspective_obj.at("aspect").as_number().value());
+							} 
+							if(perspective_obj.contains("vfov")){
+								camera.vfov = float(perspective_obj.at("vfov").as_number().value());
+							} 
+							if(perspective_obj.contains("near")){
+								camera.near = float(perspective_obj.at("near").as_number().value());
+							} 
+							if(perspective_obj.contains("far")){
+								camera.far = float(perspective_obj.at("far").as_number().value());
+							}
+						}
+						cameras[name] = camera;
+						if(name.compare(configuration.main_camera) == 0 || active_camera.name.compare("") == 0){
+							active_camera = camera;
+							std::cout << "Active scene camera set as : " << camera.name <<std::endl;
+						}
+
+					} else if(type.compare("DRIVER") == 0){
+						std::cout << "Loading driver" << std::endl;
+						Driver driver;
+						driver.name = name;
+						driver.node = object_json.at("node").as_string().value();
+						driver.channel = object_json.at("channel").as_string().value();
+						auto times = object_json.at("times").as_array().value();
+						for(auto time : times){
+							driver.times.push_back(uint32_t(time.as_number().value()));
+						}
+						auto values = object_json.at("values").as_array().value();
+						for(auto value : values){
+							driver.values.push_back(uint32_t(value.as_number().value()));
+						}
+						if(object_json.contains("interpolation")){
+							driver.interpolation = object_json.at("interpolation").as_string().value();
+						}
+						drivers[name] = driver;
+					} else if(type.compare("MATERIAL") == 0){
+						std::cout << "Loading material" << std::endl;
+						Material material;
+						material.name = name;
+						if(object_json.contains("normalMap")){
+							material.normalMap_src = object_json.at("normalMap").as_string().value();
+						}
+						if(object_json.contains("displacementMap")){
+							material.displacementMap_src = object_json.at("displacementMap").as_string().value();
+						}
+						//Find the type of material
+						
+						if(object_json.contains("pbr")){
+							material.material_type = "pbr";
+							auto pbr_obj = object_json.at("pbr").as_object().value();
+							if(auto albedo = pbr_obj.at("albedo").as_array()){
+								auto albedo_array = albedo.value();
+								material.albedo = {float(albedo_array[0].as_number().value()), 
+									float(albedo_array[1].as_number().value()), float(albedo_array[2].as_number().value()), 0.f};
+							} else if(auto albedo_src = pbr_obj.at("albedo").as_object()){
+								material.albedo_src = scene_folder + albedo_src.value().at("src").as_string().value();
+							}
+						} else if (object_json.contains("lambertian")){
+							material.material_type = "lambertian";
+						} else if (object_json.contains("mirror")){
+							material.material_type = "mirror";
+						} else if (object_json.contains("environment")){
+							material.material_type = "environment";
+						} 
+						materials[name] = material;
+					} else if(type.compare("ENVIRONMENT") == 0){
+						std::cout << "Loading environment" << std::endl;
+						Environment environment;
+						environment.name = name;
+						auto radiance = object_json.at("radiance").as_object().value();
+						environment.src = radiance.at("src").as_string().value();
+						environment.type = radiance.at("type").as_string().value();
+						environment.format = radiance.at("format").as_string().value();
+						environments[name] = environment;
+					} else if(type.compare("LIGHT") == 0){
+						std::cout << "Loading light" << std::endl;
+						Light light;
+						light.name = name;
+						if(object_json.contains("tint")){
+							auto tint = object_json.at("tint").as_array().value();
+							light.tint = {float(tint[0].as_number().value()), 
+										float(tint[1].as_number().value()), 
+										float(tint[2].as_number().value()), 0.f};
+						}
+						if(object_json.contains("shadow")){
+							light.shadow = uint32_t(object_json.at("shadow").as_number().value());
+						}
+						if(object_json.contains("sun")){
+							auto sun_obj = object_json.at("sun").as_object().value();
+							light.light_type = "sun";
+							light.angle = float(sun_obj.at("angle").as_number().value());
+							light.strength = float(sun_obj.at("strength").as_number().value());
+						} else if(object_json.contains("sphere")){
+							auto sphere_obj = object_json.at("sphere").as_object().value();
+							light.light_type = "sphere";
+							light.angle = float(sphere_obj.at("angle").as_number().value());
+							light.strength = float(sphere_obj.at("strength").as_number().value());
+							if(sphere_obj.contains("limit")){
+								light.limit = float(sphere_obj.at("limit").as_number().value());
+							}
+						} else if(object_json.contains("spot")){
+							auto spot_obj = object_json.at("spot").as_object().value();
+							light.light_type = "spot";
+							light.angle = float(spot_obj.at("angle").as_number().value());
+							light.strength = float(spot_obj.at("strength").as_number().value());
+							if(spot_obj.contains("limit")){
+								light.limit = float(spot_obj.at("limit").as_number().value());
+							}
+							light.fov = float(spot_obj.at("fov").as_number().value());
+							light.blend = float(spot_obj.at("blend").as_number().value());
+						}
+						lights[name] = light;
+					} else {
+						std::cout << "no matching object type: " << type << std::endl;
+					}
+				}
+			} else {
+				std::cout << "no matching header: " << header[0].as_string().value() << std::endl;
+			}
+		} else {
+			throw std::runtime_error("no scene was defined");
+		}
+	}
+
+	{//set culling mode
+		if(!configuration.cull_mode.empty()){
+			cull_mode = configuration.cull_mode;
+			std::cout << "Culling mode set to " << cull_mode << std::endl;
+		}
+	}
+
+	{//Create user and debug cameras
+		{
+			user_camera.target = vec3{0.f, 0.f, 0.f};
+			user_camera.radius = 2.f;
+			user_camera.azimuth = 0.3f;
+			user_camera.elevation = 0.3f;
+		}
+	}
+
 	//run any resource creation required by Helpers structure:
 	helpers.create();
+}
+
+void RTG::Node::make_parent_from_local(){
+	mat4 trans_mat{ 1.f, 0.f, 0.f, 0.f, 
+					0.f, 1.f, 0.f, 0.f,
+					0.f, 0.f, 1.f, 0.f,
+					translation[0], translation[0], translation[0], 1.f};
+	mat4 rot_mat = quaternianToMatrix(rotation);
+	mat4 scale_mat{ scale[0], 0.f, 0.f, 0.f,  
+					0.f, scale[1], 0.f, 0.f, 
+					0.f, 0.f, scale[2], 0.f,
+					0.f, 0.f, 0.f, 1.f};
+	parent_from_local = trans_mat * rot_mat * scale_mat;
 }
 RTG::~RTG() {
 	//don't destroy until device is idle:
@@ -674,6 +1106,13 @@ void RTG::run(Application &application) {
 		//deliver all input events to application:
 		for (InputEvent const &input : event_queue) {
 			application.on_input(input);
+			//TODO: headlesss PLAY
+			// if(headless){
+			// 	Event event;
+			// 	event.type = PLAY;
+			// 	event.ts = before;
+			// 	events.push_back(event);
+			// }
 		}
 		event_queue.clear();
 
@@ -685,6 +1124,7 @@ void RTG::run(Application &application) {
 			dt = std::min(dt, 0.1f); //lag if frame rate dips too low
 
 			application.update(dt);
+			//TODO: headless AVAILABLE
 		}
 
 		uint32_t workspace_index;
@@ -753,6 +1193,7 @@ retry:
 			}
 		}
 
+		//TODO: headless SAVE
 		//TODO: present image (resize swapchain if needed)
 	}
 

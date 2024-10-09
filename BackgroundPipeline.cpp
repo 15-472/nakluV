@@ -1,53 +1,34 @@
-#include "Tutorial.hpp"
+#include "A1.hpp"
 
 #include "Helpers.hpp"
 #include "VK.hpp"
 
 static uint32_t vert_code[] = 
-#include "spv/lines.vert.inl"
+#include "spv/background.vert.inl"
 ;
 
 static uint32_t frag_code[] = 
-#include "spv/lines.frag.inl"
+#include "spv/background.frag.inl"
 ;
 
-void Tutorial::LinesPipeline::create(RTG &rtg, VkRenderPass render_pass, 
+void A1::BackgroundPipeline::create(RTG &rtg, VkRenderPass render_pass, 
     uint32_t subpass) {
     VkShaderModule vert_module = rtg.helpers.create_shader_module(vert_code);
     VkShaderModule frag_module = rtg.helpers.create_shader_module(frag_code);
 
-    { //the set0_Camera layout holds a Camera structure in a uniform buffer used in the vertex shader:
-        std::array< VkDescriptorSetLayoutBinding, 1> bindings{
-            VkDescriptorSetLayoutBinding{
-                .binding = 0,
-                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-            },
-        };
-
-        VkDescriptorSetLayoutCreateInfo create_info{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .bindingCount = uint32_t(bindings.size()),
-            .pBindings = bindings.data(),
-        };
-
-        VK( vkCreateDescriptorSetLayout(rtg.device, &create_info, nullptr, &set0_Camera));
-
-    }
-
     { //create pipeline layout:
-        std::array< VkDescriptorSetLayout, 1> layouts{
-            set0_Camera,
+        VkPushConstantRange range {
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .offset = 0,
+            .size = sizeof(Push),
         };
-       
 
         VkPipelineLayoutCreateInfo create_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = uint32_t(layouts.size()),
-            .pSetLayouts = layouts.data(),
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr,
+            .setLayoutCount = 0,
+            .pSetLayouts = nullptr,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &range,
         };
 
         VK( vkCreatePipelineLayout(rtg.device, &create_info, nullptr, &layout));
@@ -81,12 +62,19 @@ void Tutorial::LinesPipeline::create(RTG &rtg, VkRenderPass render_pass,
 			.pDynamicStates = dynamic_states.data()
 		};
 
-    
+        //this pipeline will take no per-vertex inputs:
+		VkPipelineVertexInputStateCreateInfo vertex_input_state{
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+			.vertexBindingDescriptionCount = 0,
+			.pVertexBindingDescriptions = nullptr,
+			.vertexAttributeDescriptionCount = 0,
+			.pVertexAttributeDescriptions = nullptr,
+		};
 
-        //this pipeline will draw lines:
+        //this pipeline will draw triangles:
 		VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-			.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+			.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 			.primitiveRestartEnable = VK_FALSE
 		};
 
@@ -116,12 +104,10 @@ void Tutorial::LinesPipeline::create(RTG &rtg, VkRenderPass render_pass,
             .sampleShadingEnable  = VK_FALSE,
         };
 
-        //depth test will be less, and stencil tests will be disabled:
+        //depth adn stencil tests will be disabled:
         VkPipelineDepthStencilStateCreateInfo depth_stencil_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            .depthTestEnable = VK_TRUE,
-            .depthWriteEnable = VK_TRUE,
-            .depthCompareOp = VK_COMPARE_OP_LESS,
+            .depthTestEnable = VK_FALSE,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable = VK_FALSE,
         };
@@ -147,7 +133,7 @@ void Tutorial::LinesPipeline::create(RTG &rtg, VkRenderPass render_pass,
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             .stageCount = uint32_t(stages.size()),
             .pStages = stages.data(),
-            .pVertexInputState = &Vertex::array_input_state,
+            .pVertexInputState = &vertex_input_state,
 			.pInputAssemblyState = &input_assembly_state,
 			.pViewportState = &viewport_state,
 			.pRasterizationState = &rasterization_state,
@@ -169,19 +155,14 @@ void Tutorial::LinesPipeline::create(RTG &rtg, VkRenderPass render_pass,
     vkDestroyShaderModule(rtg.device, vert_module, nullptr);
 }
 
-void Tutorial::LinesPipeline::destroy(RTG &rtg) {
-    if (set0_Camera != VK_NULL_HANDLE) {
-        vkDestroyDescriptorSetLayout(rtg.device, set0_Camera, nullptr);
-        set0_Camera = VK_NULL_HANDLE;
-    }
-
-    if (layout != VK_NULL_HANDLE){
+void A1::BackgroundPipeline::destroy(RTG &rtg) {
+   if (layout != VK_NULL_HANDLE){
         vkDestroyPipelineLayout(rtg.device, layout, nullptr);
         layout = VK_NULL_HANDLE;
-    }
+   }
 
-    if (handle != VK_NULL_HANDLE){
+   if (handle != VK_NULL_HANDLE){
         vkDestroyPipeline(rtg.device, handle, nullptr);
         handle = VK_NULL_HANDLE;
-    }
+   }
 }
