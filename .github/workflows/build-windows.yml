@@ -1,0 +1,36 @@
+name: Build (Windows)
+on: workflow_dispatch
+
+jobs:
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: ilammy/msvc-dev-cmd@v1.13.0
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Fetch GLFW
+        shell: cmd
+        run : |
+          python .github/workflows/download-file.py https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.WIN64.zip ../glfw.zip
+          cd ..
+          "C:\Program Files\7-Zip\7z.exe" x -o. glfw.zip
+      - name: Fetch Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
+        with:
+          version: 1.3.290.0
+          cache: false
+      - name: Build Code
+        shell: cmd
+        run: |
+          dir/w
+          node Maekfile.js -q
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-windows
+          path: bin/*
+          retention-days: 5
+

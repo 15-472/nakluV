@@ -1,0 +1,35 @@
+name: Build (macOS)
+on: workflow_dispatch
+
+jobs:
+  build-macos:
+    name: Build (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Fetch Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
+        with:
+          version: 1.3.290.0
+          cache: false
+      - name: Fetch GLFW
+        shell: bash
+        run : |
+          python .github/workflows/download-file.py https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.MACOS.zip ../glfw.zip
+          cd ..
+          unzip glfw.zip
+      - name: Build Code
+        shell: bash
+        run: |
+          ls
+          node Maekfile.js -q
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-macos
+          path: bin/*
+          retention-days: 5
+
