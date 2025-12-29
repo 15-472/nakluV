@@ -63,11 +63,11 @@ void Helpers::destroy_image(AllocatedImage &&image) {
 
 //----------------------------
 
-void Helpers::transfer_to_buffer(void *data, size_t size, AllocatedBuffer &target) {
+void Helpers::transfer_to_buffer(void const *data, size_t size, AllocatedBuffer &target) {
 	refsol::Helpers_transfer_to_buffer(rtg, data, size, &target);
 }
 
-void Helpers::transfer_to_image(void *data, size_t size, AllocatedImage &target) {
+void Helpers::transfer_to_image(void const *data, size_t size, AllocatedImage &target) {
 	refsol::Helpers_transfer_to_image(rtg, data, size, &target);
 }
 

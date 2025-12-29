@@ -58,8 +58,8 @@ struct Helpers {
 	//CPU -> GPU data transfer:
 
 	// NOTE: synchronizes *hard* against the GPU; inefficient to use for streaming data!
-	void transfer_to_buffer(void *data, size_t size, AllocatedBuffer &target);
-	void transfer_to_image(void *data, size_t size, AllocatedImage &image); //NOTE: image layout after call is VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	void transfer_to_buffer(void const *data, size_t size, AllocatedBuffer &target);
+	void transfer_to_image(void const *data, size_t size, AllocatedImage &image); //NOTE: image layout after call is VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 
 	//-----------------------
 	//Misc utilities:

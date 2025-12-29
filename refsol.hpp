@@ -206,7 +206,7 @@ template< typename RTG_T, typename AllocatedBuffer_T >
 void Helpers_transfer_to_buffer(
 	RTG_T const &rtg,
 	//copies this data:
-	void *data,
+	void const *data,
 	size_t size,
 	//into this (already-allocated and large-enough) buffer:
 	AllocatedBuffer_T *target
@@ -217,7 +217,7 @@ template< typename RTG_T, typename AllocatedImage_T >
 void Helpers_transfer_to_image(
 	RTG_T const &rtg,
 	//copies this data:
-	void *data,
+	void const *data,
 	size_t size, //must be exactly the amount of bytes needed for image
 	//into this (already-allocated) image:
 	AllocatedImage_T *target
@@ -799,14 +799,14 @@ void Helpers_transfer_to_buffer_impl(
 	VkPhysicalDevice rtg_physical_device,
 	std::optional< uint32_t > const &rtg_graphics_queue_family,
 	VkQueue rtg_graphics_queue,
-	void *data,
+	void const *data,
 	size_t size,
 	AllocatedBufferPtr const &target
 );
 template< typename RTG_T, typename AllocatedBuffer_T >
 void Helpers_transfer_to_buffer(
 	RTG_T const &rtg,
-	void *data,
+	void const *data,
 	size_t size,
 	AllocatedBuffer_T *target
 ) {
@@ -826,14 +826,14 @@ void Helpers_transfer_to_image_impl(
 	VkPhysicalDevice rtg_physical_device,
 	std::optional< uint32_t > const &rtg_graphics_queue_family,
 	VkQueue rtg_graphics_queue,
-	void *data,
+	void const *data,
 	size_t size,
 	AllocatedImagePtr const &target
 );
 template< typename RTG_T, typename AllocatedImage_T >
 void Helpers_transfer_to_image(
 	RTG_T const &rtg,
-	void *data,
+	void const *data,
 	size_t size,
 	AllocatedImage_T *target
 ) {
