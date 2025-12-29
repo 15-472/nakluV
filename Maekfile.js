@@ -81,7 +81,7 @@ function custom_flags_and_rules() {
 	let VULKAN_SDK; //this will also be set to point to the location of the Vulkan SDK (needed for running glslc)
 
 	if (maek.OS === 'linux') {
-		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.3.290.0/x86_64`;
+		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.4.335.0/x86_64`;
 		console.log(`Using VULKAN_SDK='${VULKAN_SDK}'; set VULKAN_SDK environment variable to override.`);
 		const GLFW_DIR = process.env.GLFW_DIR || `../glfw-3.4/out`;
 		console.log(`Using GLFW_DIR='${GLFW_DIR}'; set GLFW_DIR environment variable to override.`);
@@ -105,7 +105,7 @@ function custom_flags_and_rules() {
 		];
 
 	} else if (maek.OS === 'windows') {
-		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.USERPROFILE}/VulkanSDK/1.3.290.0`;
+		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.USERPROFILE}/VulkanSDK/1.4.335.0`;
 		console.log(`Using VULKAN_SDK='${VULKAN_SDK}'; set VULKAN_SDK environment variable to override.`);
 
 		maek.options.CPP = [
@@ -136,7 +136,7 @@ function custom_flags_and_rules() {
 
 	} else if (maek.OS === 'macos') {
 		const fs = require('fs');
-		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.3.290.0/macOS`;
+		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.4.335.1/macOS`;
 		console.log(`Using VULKAN_SDK='${VULKAN_SDK}'; set VULKAN_SDK environment variable to override.`);
 
 		maek.options.CPP = ['clang++', '-std=c++20', '-Wall', '-Werror', '-g'];

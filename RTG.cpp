@@ -161,7 +161,8 @@ void RTG::recreate_swapchain() {
 		&swapchain,
 		&swapchain_extent,
 		&swapchain_images,
-		&swapchain_image_views
+		&swapchain_image_views,
+		&swapchain_image_dones
 	);
 }
 
@@ -171,7 +172,8 @@ void RTG::destroy_swapchain() {
 		device,
 		&swapchain,
 		&swapchain_images,
-		&swapchain_image_views
+		&swapchain_image_views,
+		&swapchain_image_dones
 	);
 }
 

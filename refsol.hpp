@@ -312,7 +312,8 @@ void RTG_recreate_swapchain(
 	VkSwapchainKHR *swapchain_,
 	VkExtent2D *swapchain_extent_,
 	std::vector< VkImage > *swapchain_images_,
-	std::vector< VkImageView > *swapchain_image_views_
+	std::vector< VkImageView > *swapchain_image_views_,
+	std::vector< VkSemaphore > *swapchain_image_dones_
 );
 
 //used by RTG::destroy_swapchain:
@@ -321,7 +322,8 @@ void RTG_destroy_swapchain(
 	//destroys:
 	VkSwapchainKHR *swapchain_,
 	std::vector< VkImage > *swapchain_images_,
-	std::vector< VkImageView > *swapchain_image_views_
+	std::vector< VkImageView > *swapchain_image_views_,
+	std::vector< VkSemaphore > *swapchain_image_dones_
 );
 
 //used by RTG::run:
@@ -872,8 +874,7 @@ void Helpers_create_shader_module(
 void RTG_constructor_per_workspace_impl(
 	VkDevice device,
 	VkFence *workspace_available_,
-	VkSemaphore *image_available_,
-	VkSemaphore *image_done_
+	VkSemaphore *image_available_
 );
 template< typename PerWorkspace_T >
 void RTG_constructor_per_workspace(
@@ -883,8 +884,7 @@ void RTG_constructor_per_workspace(
 	RTG_constructor_per_workspace_impl(
 		device,
 		&(workspace->workspace_available),
-		&(workspace->image_available),
-		&(workspace->image_done)
+		&(workspace->image_available)
 	);
 }
 
@@ -892,8 +892,7 @@ void RTG_constructor_per_workspace(
 void RTG_destructor_per_workspace_impl(
 	VkDevice device,
 	VkFence *workspace_available_,
-	VkSemaphore *image_available_,
-	VkSemaphore *image_done_
+	VkSemaphore *image_available_
 ) noexcept;
 template< typename PerWorkspace_T >
 void RTG_destructor_per_workspace(
@@ -903,8 +902,7 @@ void RTG_destructor_per_workspace(
 	RTG_destructor_per_workspace_impl(
 		device,
 		&(workspace->workspace_available),
-		&(workspace->image_available),
-		&(workspace->image_done)
+		&(workspace->image_available)
 	);
 }
 
@@ -915,9 +913,10 @@ void RTG_run_impl(
 	VkSwapchainKHR swapchain,
 	GLFWwindow *window,
 
+	std::vector< VkSemaphore > const &swapchain_image_dones,
+
 	std::vector< VkFence > const &workspace_availables,
 	std::vector< VkSemaphore > const &image_availables,
-	std::vector< VkSemaphore > const &image_dones,
 	uint32_t *next_workspace_,
 
 	std::function< VkSwapchainKHR() > const &recreate_swapchain,
@@ -936,11 +935,9 @@ void RTG_run(RTG_T &rtg, Application_T &application) {
 	//de-structure workspaces:
 	std::vector< VkFence > workspace_availables;
 	std::vector< VkSemaphore > image_availables;
-	std::vector< VkSemaphore > image_dones;
 	for (auto const &workspace : rtg.workspaces) {
 		workspace_availables.emplace_back(workspace.workspace_available);
 		image_availables.emplace_back(workspace.image_available);
-		image_dones.emplace_back(workspace.image_done);
 	}
 	
 	RTG_run_impl(
@@ -949,9 +946,9 @@ void RTG_run(RTG_T &rtg, Application_T &application) {
 		rtg.present_queue,
 		rtg.swapchain,
 		rtg.window,
+		rtg.swapchain_image_dones,
 		workspace_availables,
 		image_availables,
-		image_dones,
 		&rtg.next_workspace,
 		[&rtg]() -> VkSwapchainKHR {
 			rtg.recreate_swapchain();
@@ -975,7 +972,7 @@ void RTG_run(RTG_T &rtg, Application_T &application) {
 				.workspace_index = workspace_index,
 				.image_index = image_index,
 				.image_available = rtg.workspaces[workspace_index].image_available,
-				.image_done = rtg.workspaces[workspace_index].image_done,
+				.image_done = rtg.swapchain_image_dones[image_index],
 				.workspace_available = rtg.workspaces[workspace_index].workspace_available,
 			});
 		}

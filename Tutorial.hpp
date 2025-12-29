@@ -20,13 +20,10 @@ struct Tutorial : RTG::Application {
 	VkRenderPass render_pass = VK_NULL_HANDLE;
 
 	//Pipelines:
-
-	//TODO
+	//none, yet
 
 	//pools from which per-workspace things are allocated:
 	VkCommandPool command_pool = VK_NULL_HANDLE;
-	
-	//STEPX: Add descriptor pool here.
 
 	//workspaces hold per-render resources:
 	struct Workspace {

@@ -18,9 +18,9 @@ jobs:
           cd ..
           "C:\Program Files\7-Zip\7z.exe" x -o. glfw.zip
       - name: Fetch Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.1.1
+        uses: humbletim/install-vulkan-sdk@033219e2d69dd4d3e873e217eb385fdd4b4438f4
         with:
-          version: 1.3.290.0
+          version: 1.4.335.0
           cache: false
       - name: Build Code
         shell: cmd

@@ -122,6 +122,7 @@ struct RTG {
 	VkExtent2D swapchain_extent = {.width = 0, .height = 0}; //current size of the swapchain
 	std::vector< VkImage > swapchain_images; //images in the swapchain
 	std::vector< VkImageView > swapchain_image_views; //image views of the images in the swapchain
+	std::vector< VkSemaphore > swapchain_image_dones; //image is done being rendered to and is ready for presentation (here and not per-workspace because the only way to know that vkQueuePresentKHR is done with it)
 
 	//swapchain management: (used from RTG::RTG(), RTG::~RTG(), and RTG::run() [on resize])
 	void recreate_swapchain();
@@ -133,7 +134,6 @@ struct RTG {
 	struct PerWorkspace {
 		VkFence workspace_available = VK_NULL_HANDLE; //workspace is ready for a new render
 		VkSemaphore image_available = VK_NULL_HANDLE; //the image is ready to write to
-		VkSemaphore image_done = VK_NULL_HANDLE; //the image is done being written to
 	};
 	std::vector< PerWorkspace > workspaces;
 	//^^ this size could probably be hardcoded (it will almost always be 2 unless you want bottlenecks!), but I'm leaving it variable at the moment.
