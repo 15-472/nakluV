@@ -4,7 +4,6 @@
 #endif
 
 #include "Tutorial.hpp"
-#include "refsol.hpp"
 
 #include "VK.hpp"
 #include "refsol.hpp"
