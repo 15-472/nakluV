@@ -1,8 +1,3 @@
-#ifdef _WIN32
-//ensure we have M_PI
-#define _USE_MATH_DEFINES
-#endif
-
 #include "Tutorial.hpp"
 
 #include "VK.hpp"

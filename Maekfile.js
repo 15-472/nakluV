@@ -98,9 +98,9 @@ function custom_flags_and_rules() {
 		maek.options.LINKLibs = [
 			'-O2',
 			`-L${VULKAN_SDK}/lib`,
+			`-lvulkan`,
 			`-L${GLFW_DIR}/lib`,
 			'-lX11',
-			`-lvulkan`,
 			`-lglfw3`,
 		];
 
@@ -108,17 +108,19 @@ function custom_flags_and_rules() {
 		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.USERPROFILE}/VulkanSDK/1.4.335.0`;
 		console.log(`Using VULKAN_SDK='${VULKAN_SDK}'; set VULKAN_SDK environment variable to override.`);
 
-		maek.options.CPP = [
-			'cl.exe', '/nologo', '/EHsc', '/Z7', '/std:c++20', '/W4', '/WX', '/MD',
+		maek.options.CPP = ['cl.exe', '/nologo', '/EHsc', '/Z7', '/std:c++20', '/W4', '/WX', '/MD'];
+		maek.options.LINK = ['link.exe', '/nologo', '/SUBSYSTEM:CONSOLE', '/DEBUG:FASTLINK', '/INCREMENTAL:NO'];
+
+		maek.options.CPPFlags = [
+			'/O2',
+			'/D_USE_MATH_DEFINES', //we would like M_PI to be defined
 			'/wd4100', //unused formal parameter
 			'/wd4201', //nameless struct/union
 			'/wd4146', //-1U is unsigned
+			`/I${VULKAN_SDK}/Include`,
+			`/I../glfw-3.4.bin.WIN64/include`,
 		];
-		maek.options.LINK = [
-			'link.exe', '/nologo',
-			'/SUBSYSTEM:CONSOLE', //yes, you don't need WinMain to use the win32 API (!)
-			'/DEBUG:FASTLINK', '/INCREMENTAL:NO'
-		];
+
 		maek.options.LINKLibs = [
 			'User32.lib',
 			`/LIBPATH:${VULKAN_SDK}/Lib`,
@@ -128,12 +130,7 @@ function custom_flags_and_rules() {
 			'gdi32.lib',
 			'Shell32.lib'
 		];
-		maek.options.CPPFlags = [
-			`/I${VULKAN_SDK}/Include`,
-			`/I../glfw-3.4.bin.WIN64/include`,
-			'/O2'
-		];
-
+	
 	} else if (maek.OS === 'macos') {
 		const fs = require('fs');
 		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.4.335.1/macOS`;
@@ -153,7 +150,7 @@ function custom_flags_and_rules() {
 			`-L${VULKAN_SDK}/lib`,
 			`-lvulkan`,
 			`-L/opt/homebrew/lib`, //for brew-installed GLFW
-			`-L../glfw-3.4.bin.MACOS/lib-arm64`, //for research from github
+			`-L../glfw-3.4.bin.MACOS/lib-arm64`, //for release from github
 			`-lglfw3`,
 			'-framework', 'AppKit',
 			'-framework', 'QuartzCore',
