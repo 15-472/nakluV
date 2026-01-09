@@ -122,7 +122,7 @@ struct RTG {
 	VkExtent2D swapchain_extent = {.width = 0, .height = 0}; //current size of the swapchain
 	std::vector< VkImage > swapchain_images; //images in the swapchain
 	std::vector< VkImageView > swapchain_image_views; //image views of the images in the swapchain
-	std::vector< VkSemaphore > swapchain_image_dones; //image is done being rendered to and is ready for presentation (here and not per-workspace because the only way to know that vkQueuePresentKHR is done with it)
+	std::vector< VkSemaphore > swapchain_image_dones; //image is done being rendered to and is ready for presentation
 
 	//swapchain management: (used from RTG::RTG(), RTG::~RTG(), and RTG::run() [on resize])
 	void recreate_swapchain();

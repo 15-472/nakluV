@@ -110,6 +110,9 @@ RTG::RTG(Configuration const &configuration_) : helpers(*this) {
 		&present_queue
 	);
 
+	//run any resource creation required by Helpers structure:
+	helpers.create();
+
 	//create initial swapchain:
 	recreate_swapchain();
 
@@ -119,8 +122,6 @@ RTG::RTG(Configuration const &configuration_) : helpers(*this) {
 		refsol::RTG_constructor_per_workspace(device, &workspace);
 	}
 
-	//run any resource creation required by Helpers structure:
-	helpers.create();
 }
 RTG::~RTG() {
 	//don't destroy until device is idle:
@@ -130,9 +131,6 @@ RTG::~RTG() {
 		}
 	}
 
-	//destroy any resource destruction required by Helpers structure:
-	helpers.destroy();
-
 	//destroy workspace resources:
 	for (auto &workspace : workspaces) {
 		refsol::RTG_destructor_per_workspace(device, &workspace);
@@ -141,6 +139,9 @@ RTG::~RTG() {
 
 	//destroy the swapchain:
 	destroy_swapchain();
+
+	//destroy Helpers structure resources:
+	helpers.destroy();
 
 	//destroy the rest of the resources:
 	refsol::RTG_destructor( &device, &surface, &window, &debug_messenger, &instance );
